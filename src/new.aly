@@ -1,0 +1,12 @@
+{
+  LinearLayout;
+  layout_height="fill";
+  layout_width="fill";
+  orientation="vertical";
+  {
+    ImageButton;
+    src="xfan.png";
+    padding="10dp";
+    background=" ";
+  };
+};

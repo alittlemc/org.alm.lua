@@ -1,0 +1,110 @@
+require "import"
+
+--bin(bin)
+
+.stohex(str)--转hex
+.hextos(hexstr)--解
+--
+xor1
+xor64
+
+
+--B58 and B64(b58,b64)
+
+local b58 = require "codelua/b58"
+local b64 = require "codelua/b64"
+.decode(str)--解
+.encode(str)--加
+--B64
+
+
+--SHA2 and SHA3(sha2,sha3)
+
+local sha2 = require "codelua/sha2"
+local sha3 = require "codelua/sha3"
+print(sha2.hash256(string))--sha2唯一的
+print(sha3.hash512(string))--sha3多样性(避免碰车)
+
+--MD5(md5)
+
+local md5 = require "codelua/md5"
+
+md5.string(str)
+md5.file(path)
+
+--rc4(rc4)
+
+local rc4 = require "codelua/rc4"
+--密钥,目标字符串,加密解密迁移量
+--当密钥和迁移量一致才可以加解密
+--密钥必须是16bit
+.encrypt(_16bit_key, str,nil int)--加
+.decrypt(_16bit_key,str,nil or int)--解
+
+--chacha20(chacha20)
+
+local chacha20 = require "codelua/chacha20"
+
+.key_size--32
+
+.nonce_size--12
+
+--key 32bit
+--nonce 12bit
+--counter 整数,迁移量
+.encrypt(key, counter, nonce, plain)--编码
+.encrypt(key, counter, nonce, et)--解编码,用同一个方法
+
+
+--checksum(checsum)
+--字符串转8位十六进制数，转成十进制长度不一定
+
+local checsum = require "codelua/checksum"
+.crc32_nt(str)--一般来说都是一样的
+.crc32(str)--
+.adler32(str)
+
+--aead_chacha_poly(aead_chacha_poly,poly1305,chacha20)
+local aead = require "root/aead_chacha_poly"
+--plain 字符串,对象
+--const 4bit
+--add 6bit
+--key 12bit
+--iv 8bit
+
+aead.poly_keygen(key, nonce)--12bit,32bit
+--[en]
+encr, tag = aead.encrypt(aad, key, iv, const, plain)
+
+--encr串1,tag串2
+--[de]
+res, msg = aead.decrypt(aad, key, iv, const, encr, tag)
+--res解串,nil
+
+--alm(d)编码加解密(checsum,rc4)
+
+function tobit(str,i,s)
+  local len,s,i,sub=#str,s or "0",i or 16,string.sub
+  return len>i and sub(str,0,i) or str..string.rep(s,i-len)
+end
+
+function alm_b(str,key_str,mod1,mod2,repadd,remove)
+  --str 目标字符串
+  --key_str 密钥字符串
+  --mod1 and 解 or 加
+  --mod2 and crc32 or adler
+  --repadd 单字符,密钥字符串补偿
+  --remove 数字,编码迁移
+  local sub=string.sub
+  local temp = require "codelua/checksum"
+  local rc4 = require "codelua/rc4"
+
+  local fun1=mod1 and rc4.decrypt or rc4.encrypt
+  local fun2=mod2 and temp.adler32 or temp.crc32
+
+  return fun1(
+  tobit(tostring(fun2(key_str)),16,sub(repadd,1,1)),
+  str,
+  tonumber(remove))
+
+end
